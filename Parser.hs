@@ -98,7 +98,15 @@ list elemParser delim = do e <- elemParser
 
 -- End of Primitives
 
-{- predicate :: Parser Predicate
+emptyPredicate :: Predicate
+emptyPredicate = Predicate {
+  predicateAlias = Nothing,
+  predicateNegated = False,
+  predicateName = "",
+  predicateArgs = Nothing
+}
+
+predicate :: Parser Predicate
 predicate = do char '\\'
                p <- predicate'
                return p { predicateNegated = True }
@@ -114,21 +122,23 @@ predicate = do char '\\'
                            return Predicate { predicateAlias, predicateNegated, predicateName, predicateArgs = Nothing }
                         where predicateNegated = False
                               predicateAlias = Nothing
-        argument :: Parser String
-        argument = identifier
+        argument :: Parser PredicateArgs
+        argument = do predicateName <- identifier
+                      return $ PredicateArg (emptyPredicate { predicateName })
                    <|>
                    do strBegin <- char '"'
                       str <- many (sat (/= '"'))
                       strEnd <- char '"'
-                      return ((strBegin:str) ++ [strEnd])
+                      return $ StringArg ((strBegin:str) ++ [strEnd])
                    <|>
-                   many digit
+                   do numStr <- many digit
+                      return $ IntArg (read numStr)
 
 alias :: Parser Predicate
 alias = do a <- identifier
            char' '='
            p <- predicate
-           return p { predicateAlias = Just a } -}
+           return p { predicateAlias = Just a }
 
 typeDef :: Parser TypeDef
 typeDef = do char '!'
@@ -145,14 +155,14 @@ typeDef = do char '!'
 
 
 expr :: Parser Bool
-expr = {- do alias
+expr = do alias
           char '.'
           return True
       <|>
        do predicate
           char '.'
           return True
-      <|> -}
+      <|>
       do typeDef
          char '.'
          return True

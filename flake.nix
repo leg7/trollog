@@ -12,6 +12,7 @@
     in pkgs.mkShell
     {
       packages = with pkgs; [
+        gcc
         ghc
       ];
     };
