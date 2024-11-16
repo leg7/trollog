@@ -98,7 +98,7 @@ list elemParser delim = do e <- elemParser
 
 -- End of Primitives
 
-predicate :: Parser Predicate
+{- predicate :: Parser Predicate
 predicate = do char '\\'
                p <- predicate'
                return p { predicateNegated = True }
@@ -128,7 +128,7 @@ alias :: Parser Predicate
 alias = do a <- identifier
            char' '='
            p <- predicate
-           return p { predicateAlias = Just a }
+           return p { predicateAlias = Just a } -}
 
 typeDef :: Parser TypeDef
 typeDef = do char '!'
@@ -145,14 +145,14 @@ typeDef = do char '!'
 
 
 expr :: Parser Bool
-expr = do alias
+expr = {- do alias
           char '.'
           return True
       <|>
        do predicate
           char '.'
           return True
-      <|>
+      <|> -}
       do typeDef
          char '.'
          return True
