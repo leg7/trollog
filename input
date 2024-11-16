@@ -1,9 +1,14 @@
-pokemon(pikachu)
-pokemon2(pikachu)
- pokemon2(pikachu,raichu)
-pokemon2(pikachu, raichu)
-pokemon2( pikachu , raichu )
-pokemon2  ( pikachu , raichu,Pacho)
-pokemon2  ( pikachu , raichu,machoc7)
-test = pokemon2  ( pikachu , raichu,machoc7)
-pokemon(Pikachu)
+pokemon.
+pokemon(pikachu).
+pokemon2(pikachu).
+ pokemon2(pikachu,raichu).
+pokemon2(pikachu, raichu).
+pokemon2( pikachu , raichu ).
+\pokemon2  ( pikachu , raichu,machoc7).
+test = pokemon2  ( pikachu , 7,machoc7).
+test = \pokemon2  ( pikachu , raichu,machoc7).
+pokemon2  ( pikachu , raichu,Machoc7).
+pokemon(Pikachu).
+!pokemon(String).
+!pokemon(Int).
+!pokemon2(String, Int, fire | water | earth).
