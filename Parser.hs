@@ -147,20 +147,35 @@ typeDef = do char '!'
 
 
 expr :: Parser Bool
-expr = do alias
+expr = do spaces
+          alias
+          spaces
           char '.'
           return True
       <|>
-       do predicate
+       do spaces
+          predicate
+          spaces
           char '.'
           return True
       <|>
-      do typeDef
-         char '.'
-         return True
+       do spaces
+          typeDef
+          spaces
+          char '.'
+          return True
+
+printRed :: String -> IO ()
+printRed str = putStrLn "\x1b[31m" >> putStrLn str >> putStrLn "\x1b[0m"
 
 parseExpr :: IO ()
-parseExpr = do inp <- getLine
-               case app expr inp of
-                    Right (r,_) -> putStrLn (show r)
-                    Left err -> putStrLn err
+parseExpr = go []
+  where go acc = do c <- getChar
+                    let rstr = c:acc
+                    if c == '.' then
+                      case app expr $ reverse rstr of
+                           Right (r,_) -> putStrLn (show r)
+                           Left err -> printRed err
+                    else
+                      go rstr
+

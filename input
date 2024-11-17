@@ -15,5 +15,10 @@ pokemon(Pikachu).
 
 
 !type(feu | elec | eau | terre).
-!pokemon(String, type)
+!pokemon(String, type).
 pokemon("pik", type(elec)).
+pokemon(
+  "pik",
+  50,
+  elec
+).
