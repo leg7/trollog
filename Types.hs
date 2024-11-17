@@ -10,6 +10,9 @@ data Predicate = Predicate { predicateAlias :: Maybe String,
                              predicateArgs :: [PredicateArgs]
                            } deriving (Show, Eq)
 
+instance Ord Predicate where
+    compare p1 p2 = compare (predicateName p1) (predicateName p2)
+
 emptyPredicate :: Predicate
 emptyPredicate = Predicate {
   predicateAlias = Nothing,
@@ -18,6 +21,30 @@ emptyPredicate = Predicate {
   predicateArgs = []
 }
 
+
+--un type peut etre un autre typedef (What the fuck jsp comment faire pour le type)
+{-
+        Predicate {
+            predicateAlias = Nothing ,
+            predicateNegated = False ,
+            predicateName = "duoPokemon",
+            predicateArgs = [
+                (Predicate{
+                    predicateAlias = Nothing ,
+                    predicateNegated = False ,
+                    predicateName = "pokemon",
+                    predicateArgs = ["pikachu"]
+                    }),
+                (Predicate{
+                    predicateAlias = Nothing ,
+                    predicateNegated = False ,
+                    predicateName = "pokemon",
+                    predicateArgs = ["mewtwo"]
+                    })
+                ]
+            }
+-}
+
 data Type = Str | N | P [String]
           deriving (Show, Eq)
 
@@ -25,8 +52,14 @@ data TypeDef = TypeDef { typeName :: String,
                          typeArgs :: [Type]
                        } deriving (Show, Eq)
 
+instance Ord TypeDef where
+    compare td1 td2 = compare (typeName td1) (typeName td2)
+
+
 type Conjunction = [Predicate]
+
 data Rule = Rule { premises :: Conjunction,
                    consequences :: Conjunction
                  } deriving (Show, Eq)
+
 
