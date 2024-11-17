@@ -3,7 +3,7 @@
 module Parser where
 import Types
 import Data.Char
-import Control.Applicative (Alternative, (<|>), empty)
+import Control.Applicative (Alternative, (<|>), empty, some, many)
 import Distribution.Utils.Generic (isAsciiAlphaNum)
 
 newtype Parser a = S { app :: String -> Either String (a, String) }
@@ -47,7 +47,7 @@ instance Monad Parser where
 sat :: (Char -> Bool) -> Parser Char
 sat p = S (\inp -> case inp of
                         [] -> Left "ParseError, sat: Couldn't parse empty string"
-                        c:inp' -> if p c then Right (c, inp') else Left $ "Couldn't parse character: '" ++ [c] ++ "' before \"" ++ inp' ++ "\"")
+                        c:inp' -> if p c then Right (c, inp') else Left $ "Couldn't parse '" ++ inp' ++ "' after character\"" ++ [c] ++ "\"")
 
 char :: Char -> Parser Char
 char c = sat (== c)
@@ -63,13 +63,6 @@ alphaNumeric = sat isAsciiAlphaNum
 
 digit :: Parser Char
 digit = sat isDigit
-
-many :: Parser a -> Parser [a]
-many p = do c <- p
-            cs <- many p
-            return (c:cs)
-          <|>
-            return []
 
 spaces :: Parser String
 spaces = many $ sat isSpace
@@ -99,7 +92,7 @@ list elemParser delim = do e <- elemParser
 -- End of Primitives
 
 predicate :: Parser Predicate
-predicate = do char '\\'
+predicate = do char' '\\'
                p <- predicate'
                return p { predicateNegated = True }
                <|>
@@ -118,13 +111,13 @@ predicate = do char '\\'
         argument = do predicateName <- identifier
                       return $ PredicateArg (emptyPredicate { predicateName })
                    <|>
-                   do strBegin <- char '"'
-                      str <- many (sat (/= '"'))
-                      strEnd <- char '"'
-                      return $ StringArg ((strBegin:str) ++ [strEnd])
+                   do strBegin <- char' '"'
+                      str <- some (sat (/= '"'))
+                      strEnd <- char' '"'
+                      return $ StringArg (strBegin ++ str ++ strEnd)
                    <|>
-                   do numStr <- many digit
-                      return $ IntArg (read numStr)
+                   do numStr <- some digit
+                      return $ IntArg $ read numStr
 
 alias :: Parser Predicate
 alias = do a <- identifier
@@ -133,7 +126,7 @@ alias = do a <- identifier
            return p { predicateAlias = Just a }
 
 typeDef :: Parser TypeDef
-typeDef = do char '!'
+typeDef = do char' '!'
              typeName <- identifier
              char' '('
              typeArgs <- list type' ','
@@ -154,26 +147,23 @@ rule = do premises <- conjunction
           return Rule { premises, consequences }
   where conjunction = list predicate ','
 
-expr :: Parser Bool
-expr = do spaces
-          rule
+data Expr = ExprPredicate Predicate
+          | ExprTypeDef TypeDef
+          | ExprRule Rule
+          deriving (Show, Eq)
+
+expr :: Parser Expr
+expr = do r <- rule
           char' '.'
-          return True
+          return $ ExprRule r
       <|>
-       do spaces
-          alias
+       do t <- typeDef
           char' '.'
-          return True
+          return $ ExprTypeDef t
       <|>
-       do spaces
-          predicate
+       do p <- alias <|> predicate
           char' '.'
-          return True
-      <|>
-       do spaces
-          typeDef
-          char' '.'
-          return True
+          return $ ExprPredicate p
 
 printRed :: String -> IO ()
 printRed str = putStrLn "\x1b[31m" >> putStrLn str >> putStrLn "\x1b[0m"
@@ -188,4 +178,3 @@ parseExpr = go []
                            Left err -> printRed err
                     else
                       go rstr
-
