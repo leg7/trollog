@@ -3,7 +3,6 @@ module Types where
 data PredicateArgs = StringArg String | IntArg Int | PredicateArg Predicate
                    deriving (Show, Eq)
 
-
 data Predicate = Predicate { predicateAlias :: Maybe String,
                              predicateNegated :: Bool,
                              predicateName :: String,
@@ -63,3 +62,11 @@ data Rule = Rule { premises :: Conjunction,
                  } deriving (Show, Eq)
 
 
+class Key a where
+  key ::  a -> String
+
+instance Key Predicate where
+  key = predicateName
+
+instance Key TypeDef where
+  key = typeName

@@ -17,86 +17,55 @@ bstHasElement (Node b left right) a =
               else if (a > b) then bstHasElement right a
                               else bstHasElement left a
 
+bstGetElement :: (Key a) => BST a -> String -> Maybe a
+bstGetElement Empty _ = Nothing
+bstGetElement (Node x l r) k
+  | k > kx = bstGetElement r k
+  | k < kx = bstGetElement l k
+  | otherwise = Just x
+  where kx = key x
+
+
 bstToList :: (Ord a) => BST a -> [a]
 bstToList Empty = []
 bstToList (Node a left right) = a:(bstToList left)++(bstToList right)
-
-
 
 
 --Dictionnary
 type Dict a b = [(a,b)]
 
 dictAddKV :: Dict a b -> a -> b -> Dict a b
-dictAddKV [] key value = [(key,value)]
-dictAddKV (_:t) key value = dictAddKV t key value
+dictAddKV [] k value = [(k,value)]
+dictAddKV (_:t) k value = dictAddKV t k value
 
 dictGetValue :: (Eq a) => Dict a b -> a -> Maybe b
 dictGetValue [] _ = Nothing
-dictGetValue (h:t) key =
-    if (key == (fst h)) then Just (snd h)
-                           else dictGetValue t key
+dictGetValue (h:t) k =
+  if k == fst h then Just (snd h)
+                else dictGetValue t k
 
 dictGetKey :: (Eq b) => Dict a b -> b -> Maybe a
 dictGetKey [] _ = Nothing
 dictGetKey (h:t) value =
-    if (value == (snd h)) then Just (fst h)
-                             else dictGetKey t value
+  if value == snd h then Just (fst h)
+                    else dictGetKey t value
 
-
-
-
-
-
-
---DECLARED TYPES
 declaredTypes :: BST TypeDef
 declaredTypes = Empty
 
-addTypeDef :: BST TypeDef -> TypeDef -> BST TypeDef
-addTypeDef dT td = bstAddElement dT td
-
-typeDefExists :: BST TypeDef -> TypeDef -> Bool
-typeDefExists dT td = bstHasElement dT td
-
-
-
-
---FACTS
 facts :: BST Predicate
 facts = Empty
 
-addPredicate :: BST Predicate -> Predicate -> BST Predicate
-addPredicate f predi = bstAddElement f predi
-
-isPredicate :: BST Predicate -> Predicate -> Bool
-isPredicate f predi = bstHasElement f predi
-
-
-
-
---NONFACTS
 nonFacts :: BST Predicate
 nonFacts = Empty
 
-addNonPredicate :: BST Predicate -> Predicate -> BST Predicate
-addNonPredicate nF nonPredi = bstAddElement nF nonPredi
-
-isNonPredicate :: BST Predicate -> Predicate -> Bool
-isNonPredicate nF nonPredi = bstHasElement nF nonPredi
-
-
-
-
---RULES
 rules :: Dict [Predicate] [Predicate]
 rules = []
 addRule :: Dict [Predicate] [Predicate] -> Rule -> Dict [Predicate] [Predicate]
 addRule rs r = dictAddKV rs (premises r) (consequences r)
 
-
-
-
+-- wellTyped :: Predicate -> Bool
+-- wellTyped p = bstHasElement declaredTypes p
 
 --Chainage Avant
 {-chainageAvant :: Predicate -> Bool
@@ -104,41 +73,31 @@ chainageAvant predi =
     if (isPredicate predi) then true
     else -}
 
-
-
-
-
-
-
-
-
 --Test
 
-predi1 :: Predicate
-predi1 = Predicate {
-        predicateAlias = Nothing ,
-        predicateNegated = True ,
-        predicateName = "A",
-        predicateArgs = []
-    }
+pa :: Predicate
+pa = emptyPredicate { predicateName = "a" }
 
-predi2 :: Predicate
-predi2 = Predicate {
-        predicateAlias = Nothing ,
-        predicateNegated = True ,
-        predicateName = "B",
-        predicateArgs = []
-    }
+pb :: Predicate
+pb = emptyPredicate { predicateName = "B" }
+
+pc :: Predicate
+pc = emptyPredicate { predicateName = "C" }
+
+-- :)
+pd :: Predicate
+pd = emptyPredicate { predicateName = "D" }
 
 rule :: Rule
 rule = Rule {
-    premises = [predi1] ,
-    consequences = [predi2]
+    premises = [pa, pb] ,
+    consequences = [pc, pd]
 }
 
+fs :: BST Predicate
+fs = bstAddElement (bstAddElement (bstAddElement (bstAddElement facts pb) pc) pc) pd
 
-
-
-
-
-
+{- bstGetElement fs "A"
+bstGetElement fs "B"
+bstGetElement fs "C"
+bstGetElement fs "D" -}
