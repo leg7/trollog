@@ -17,6 +17,14 @@ bstHasElement (Node b left right) a =
               else if (a > b) then bstHasElement right a
                               else bstHasElement left a
 
+bstHasKey :: (Key a) => BST a -> String -> Bool
+bstHasKey Empty _ = False
+bstHasKey (Node x l r) k
+  | k > kx = bstHasKey r k
+  | k < kx = bstHasKey l k
+  | otherwise = True
+  where kx = key x
+
 bstGetElement :: (Key a) => BST a -> String -> Maybe a
 bstGetElement Empty _ = Nothing
 bstGetElement (Node x l r) k
@@ -64,8 +72,13 @@ rules = []
 addRule :: Dict [Predicate] [Predicate] -> Rule -> Dict [Predicate] [Predicate]
 addRule rs r = dictAddKV rs (premises r) (consequences r)
 
--- wellTyped :: Predicate -> Bool
--- wellTyped p = bstHasElement declaredTypes p
+-- TODO: getElement and check if args are the same type
+wellTyped :: Predicate -> BST TypeDef -> Bool
+wellTyped p t = bstHasKey t (key p)
+
+contradiction :: Predicate -> BST Predicate -> Bool
+contradiction p nf = bstHasKey nf (key p)
+
 
 --Chainage Avant
 {-chainageAvant :: Predicate -> Bool
@@ -76,7 +89,7 @@ chainageAvant predi =
 --Test
 
 pa :: Predicate
-pa = emptyPredicate { predicateName = "a" }
+pa = emptyPredicate { predicateName = "A" }
 
 pb :: Predicate
 pb = emptyPredicate { predicateName = "B" }
@@ -101,3 +114,8 @@ fs = bstAddElement (bstAddElement (bstAddElement (bstAddElement facts pb) pc) pc
 bstGetElement fs "B"
 bstGetElement fs "C"
 bstGetElement fs "D" -}
+
+nfs :: BST Predicate
+nfs = bstAddElement nonFacts pc
+
+-- contradiction pb nfs
