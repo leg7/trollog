@@ -25,8 +25,8 @@ data TypeDef = TypeDef { typeName :: String,
                          typeArgs :: [Type]
                        } deriving (Show, Eq)
 
-type Clause = [Predicate]
-data Rule = Rule { premises :: [Clause] ,
-                   consequences :: [Clause]
+type Conjunction = [Predicate]
+data Rule = Rule { premises :: Conjunction,
+                   consequences :: Conjunction
                  } deriving (Show, Eq)
 

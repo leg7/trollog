@@ -145,24 +145,34 @@ typeDef = do char '!'
             <|> (string "Int" >> return N)
             <|> (P <$> list identifier '|')
 
+rule :: Parser Rule
+rule = do premises <- conjunction
+          spaces
+          string "->"
+          spaces
+          consequences <- conjunction
+          return Rule { premises, consequences }
+  where conjunction = list predicate ','
 
 expr :: Parser Bool
 expr = do spaces
+          rule
+          char' '.'
+          return True
+      <|>
+       do spaces
           alias
-          spaces
-          char '.'
+          char' '.'
           return True
       <|>
        do spaces
           predicate
-          spaces
-          char '.'
+          char' '.'
           return True
       <|>
        do spaces
           typeDef
-          spaces
-          char '.'
+          char' '.'
           return True
 
 printRed :: String -> IO ()
