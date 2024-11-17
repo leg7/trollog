@@ -149,15 +149,38 @@ rule = do premises <- conjunction
           return Rule { premises, consequences }
   where conjunction = list predicate ','
 
+command :: Parser Command
+command =
+   do string "showNonFacts"
+      return ShowNonFacts
+  <|>
+   do string "showFacts"
+      return ShowFacts
+  <|>
+   do string "showDeclaredTypes"
+      return ShowDeclaredTypes
+   <|>
+   do string "showRules"
+      return ShowRules
+   <|>
+   do string "quit"
+      return Quit
+
 expr :: Parser Expr
-expr = do r <- rule
-          char' '.'
-          return $ ExprRule r
-      <|>
-       do t <- typeDef
-          char' '.'
-          return $ ExprTypeDef t
-      <|>
-       do p <- alias <|> predicate
-          char' '.'
-          return $ ExprPredicate p
+expr =
+  do char' ':'
+     c <- command
+     char' '.'
+     return $ ExprCommand c
+ <|>
+  do r <- rule
+     char' '.'
+     return $ ExprRule r
+ <|>
+  do t <- typeDef
+     char' '.'
+     return $ ExprTypeDef t
+ <|>
+  do p <- alias <|> predicate
+     char' '.'
+     return $ ExprPredicate p

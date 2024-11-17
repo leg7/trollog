@@ -48,8 +48,14 @@ data Rule = Rule { premises :: Conjunction,
 data Expr = ExprPredicate Predicate
           | ExprTypeDef TypeDef
           | ExprRule Rule
+          | ExprCommand Command
           deriving (Show, Eq)
 
+
+-- Commands
+
+data Command = ShowFacts | ShowNonFacts | ShowDeclaredTypes | ShowRules | Quit
+             deriving (Eq, Show)
 
 -- Key
 

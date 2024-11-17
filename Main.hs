@@ -33,7 +33,13 @@ main =
            Left err -> printRed err
            Right (e, _) -> case e of
                                 ExprPredicate p -> if predicateNegated p
-                                                      then go (bstAddElement f p) nf ty rl
-                                                      else go f (bstAddElement nf p) ty rl
+                                                      then go f (bstAddElement nf p) ty rl
+                                                      else go (bstAddElement f p) nf ty rl
                                 ExprTypeDef t -> go f nf (bstAddElement ty t) rl
                                 ExprRule r -> go f nf ty (dictAddKV rl (premises r) (consequences r))
+                                ExprCommand c -> case c of
+                                                      ShowFacts -> print f >> go f nf ty rl
+                                                      ShowNonFacts -> print nf >> go f nf ty rl
+                                                      ShowDeclaredTypes -> print ty >> go f nf ty rl
+                                                      ShowRules -> print rl >> go f nf ty rl
+                                                      Quit -> return ()
