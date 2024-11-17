@@ -3,11 +3,20 @@ module Types where
 data PredicateArgs = StringArg String | IntArg Int | PredicateArg Predicate
                    deriving (Show, Eq)
 
+
 data Predicate = Predicate { predicateAlias :: Maybe String,
                              predicateNegated :: Bool,
                              predicateName :: String,
-                             predicateArgs :: Maybe [PredicateArgs]
+                             predicateArgs :: [PredicateArgs]
                            } deriving (Show, Eq)
+
+emptyPredicate :: Predicate
+emptyPredicate = Predicate {
+  predicateAlias = Nothing,
+  predicateNegated = False,
+  predicateName = "",
+  predicateArgs = []
+}
 
 data Type = Str | N | P [String]
           deriving (Show, Eq)

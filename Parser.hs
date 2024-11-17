@@ -98,14 +98,6 @@ list elemParser delim = do e <- elemParser
 
 -- End of Primitives
 
-emptyPredicate :: Predicate
-emptyPredicate = Predicate {
-  predicateAlias = Nothing,
-  predicateNegated = False,
-  predicateName = "",
-  predicateArgs = Nothing
-}
-
 predicate :: Parser Predicate
 predicate = do char '\\'
                p <- predicate'
@@ -115,11 +107,11 @@ predicate = do char '\\'
   where predicate' :: Parser Predicate
         predicate' = do predicateName <- identifier
                         do char' '('
-                           args <- list argument ','
+                           predicateArgs <- list argument ','
                            char' ')'
-                           return Predicate { predicateAlias, predicateNegated, predicateName, predicateArgs = Just args }
+                           return Predicate { predicateAlias, predicateNegated, predicateName, predicateArgs }
                           <|>
-                           return Predicate { predicateAlias, predicateNegated, predicateName, predicateArgs = Nothing }
+                           return Predicate { predicateAlias, predicateNegated, predicateName, predicateArgs = [] }
                         where predicateNegated = False
                               predicateAlias = Nothing
         argument :: Parser PredicateArgs
