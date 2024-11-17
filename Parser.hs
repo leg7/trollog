@@ -149,11 +149,6 @@ rule = do premises <- conjunction
           return Rule { premises, consequences }
   where conjunction = list predicate ','
 
-data Expr = ExprPredicate Predicate
-          | ExprTypeDef TypeDef
-          | ExprRule Rule
-          deriving (Show, Eq)
-
 expr :: Parser Expr
 expr = do r <- rule
           char' '.'
@@ -166,17 +161,3 @@ expr = do r <- rule
        do p <- alias <|> predicate
           char' '.'
           return $ ExprPredicate p
-
-printRed :: String -> IO ()
-printRed str = putStrLn "\x1b[31m" >> putStrLn str >> putStrLn "\x1b[0m"
-
-parseExpr :: IO ()
-parseExpr = go []
-  where go acc = do c <- getChar
-                    let rstr = c:acc
-                    if c == '.' then
-                      case app expr $ reverse rstr of
-                           Right (r,_) -> putStrLn (show r)
-                           Left err -> printRed err
-                    else
-                      go rstr
