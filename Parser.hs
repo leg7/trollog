@@ -108,8 +108,10 @@ predicate = do char' '\\'
                         where predicateNegated = False
                               predicateAlias = Nothing
         argument :: Parser PredicateArgs
-        argument = do predicateName <- identifier
-                      return $ PredicateArg (emptyPredicate { predicateName })
+        argument = do PredicateArg <$> predicate
+                   <|>
+                   do p <- identifier
+                      return $ PredicateArg (emptyPredicate { predicateAlias = Just p })
                    <|>
                    do strBegin <- char' '"'
                       str <- some (sat (/= '"'))
