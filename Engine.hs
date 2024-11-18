@@ -26,7 +26,6 @@ typeDefsFromTypeArgs =
   . concatMap pTypeVal
   . filter isPType
 
--- TODO: Add newTypes to facts
 addDeclaredTypes :: TypeDef -> [TypeDef] -> Either String [TypeDef]
 addDeclaredTypes t ts
   | declared t ts = Left "A type with the same name has already been declared"
@@ -34,14 +33,14 @@ addDeclaredTypes t ts
                     newTypes = filter (\x -> not $ declared x ts) stypes
                     in Right $ t:(newTypes ++ ts)
 
-typeNameOfPredAlias :: Predicate -> [TypeDef] -> Maybe String
-typeNameOfPredAlias p ts = case predicateAlias p of
-                                Nothing -> Nothing
-                                Just a -> find (== a) $ map typeName ts
+findOriginal :: Predicate -> [Predicate] -> Maybe Predicate
+findOriginal p = find (\x -> case predicateAlias x of
+                                  Nothing -> False
+                                  Just a -> a == predicateName p)
 
--- TODO: Support aliases
-wellTyped :: Predicate -> [TypeDef] -> Bool
-wellTyped p tdfs =
+
+wellTyped :: Predicate -> [TypeDef] -> [Predicate] -> Bool
+wellTyped p tdfs fcts =
   case find (\x -> typeName x == predicateName p) tdfs of
        Nothing -> False
        Just t -> let pa = predicateArgs p
@@ -50,33 +49,24 @@ wellTyped p tdfs =
                        where
                          cmp (StringArg _) Str = True
                          cmp (IntArg _) N = True
-                         cmp (PredicateArg p') (P pns) = (predicateName p' `elem` pns) && wellTyped p' tdfs
+                         -- This is disgusting, I'll refactor it later (i.e never)
+                         cmp (PredicateArg p') (P pns) = if null (predicateArgs p')
+                                                            then case findOriginal p' fcts of
+                                                                      Nothing -> (predicateName p' `elem` pns) && wellTyped p' tdfs fcts
+                                                                      Just o -> (predicateName o `elem` pns) && wellTyped o tdfs fcts
+                                                            else (predicateName p' `elem` pns) && wellTyped p' tdfs fcts
+
                          cmp _ _ = False
-
-
--- tt = [TypeDef {typeName = "y", typeArgs = [P ["p","test"]]},TypeDef {typeName = "test", typeArgs = []},TypeDef {typeName = "p", typeArgs = [N]}]
---
--- p = Predicate {
---   predicateAlias = Nothing,
---   predicateName = "y",
---   predicateNegated = False,
---   predicateArgs = [PredicateArg (pp)]
--- }
---
--- pp = Predicate {
---       predicateAlias = Nothing,
---       predicateName = "p",
---       predicateNegated = False,
---       predicateArgs = [ IntArg 1 ]
--- }
-
--- typeNameOfPred (head pp) tt
--- wellTyped p tt
 
 -- Facts
 
 facts :: [Predicate]
 facts = []
+
+isFact :: Predicate -> [Predicate] -> Bool
+isFact p fcts = case find (== p { predicateAlias = Nothing }) fcts of
+                     Nothing -> False
+                     Just _ -> True
 
 contradiction :: Predicate -> [Predicate] -> Bool
 contradiction p fcts =
@@ -84,15 +74,16 @@ contradiction p fcts =
                             Nothing -> False
                             _ -> True
 
+-- TODO: If fact is aliased add it's alias as a fact that takes 0 args with the same pred name
 addFact :: Predicate -> [Predicate] -> [TypeDef] -> Either String [Predicate]
 addFact p fcts ts
   | contradiction p fcts = Left "Fact contradicts another in the knowledge base"
-  | not $ wellTyped p ts = Left "Fact doesn't have a matching type definition" -- Check if it has 0 args
+  | not $ wellTyped p ts fcts = Left "Fact doesn't have a matching type definition" -- Check if it has 0 args
   | p `elem` fcts = Right fcts
   | otherwise = case predicateAlias p of
                      Nothing -> Right (p:fcts)
-                     Just _ -> case find (\x -> x == p { predicateAlias = Nothing }) fcts of
-                                    Nothing -> Right (p:fcts)
+                     Just a -> case find (\x -> x == p { predicateAlias = Nothing }) fcts of
+                                    Nothing -> Right (emptyPredicate { predicateName = a } : p : fcts)
                                     _ -> Left "Fact already declared without an alias"
 
 -- Rules
