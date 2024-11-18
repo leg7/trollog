@@ -1,6 +1,6 @@
 module Engine where
 import Types
-import Data.List (delete, (\\), find)
+import Data.List ((\\), find)
 
 -- Types
 
@@ -50,29 +50,26 @@ wellTyped p tdfs =
                        where
                          cmp (StringArg _) Str = True
                          cmp (IntArg _) N = True
-                         cmp (PredicateArg p') (P pns) =
-                           case typeNameOfPredAlias p' tdfs of
-                                Nothing -> False
-                                Just tName -> ((predicateName p' `elem` pns) || (tName `elem` pns)) && wellTyped p' tdfs
+                         cmp (PredicateArg p') (P pns) = (predicateName p' `elem` pns) && wellTyped p' tdfs
                          cmp _ _ = False
 
 
--- pp = [Predicate {predicateAlias = Just "a", predicateNegated = False, predicateName = "p", predicateArgs = [IntArg 2]},Predicate {predicateAlias = Nothing, predicateNegated = False, predicateName = "p", predicateArgs = [IntArg 1]}]
 -- tt = [TypeDef {typeName = "y", typeArgs = [P ["p","test"]]},TypeDef {typeName = "test", typeArgs = []},TypeDef {typeName = "p", typeArgs = [N]}]
 --
 -- p = Predicate {
 --   predicateAlias = Nothing,
 --   predicateName = "y",
 --   predicateNegated = False,
---   predicateArgs = [PredicateArg (
---     Predicate {
+--   predicateArgs = [PredicateArg (pp)]
+-- }
+--
+-- pp = Predicate {
 --       predicateAlias = Nothing,
 --       predicateName = "p",
 --       predicateNegated = False,
 --       predicateArgs = [ IntArg 1 ]
---     }
---   )]
 -- }
+
 -- typeNameOfPred (head pp) tt
 -- wellTyped p tt
 
@@ -94,7 +91,7 @@ addFact p fcts ts
   | p `elem` fcts = Right fcts
   | otherwise = case predicateAlias p of
                      Nothing -> Right (p:fcts)
-                     Just a -> case find (\x -> x == p { predicateAlias = Nothing }) fcts of
+                     Just _ -> case find (\x -> x == p { predicateAlias = Nothing }) fcts of
                                     Nothing -> Right (p:fcts)
                                     _ -> Left "Fact already declared without an alias"
 
