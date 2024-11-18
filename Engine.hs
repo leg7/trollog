@@ -82,9 +82,18 @@ addFact p fcts ts
   | p `elem` fcts = Right fcts
   | otherwise = case predicateAlias p of
                      Nothing -> Right (p:fcts)
-                     Just a -> case find (\x -> x == p { predicateAlias = Nothing }) fcts of
-                                    Nothing -> Right (emptyPredicate { predicateName = a } : p : fcts)
-                                    _ -> Left "Fact already declared without an alias"
+                     Just a -> let sameContent = find (\x -> x == p { predicateAlias = Nothing }) $ map (\x -> x { predicateAlias = Nothing }) fcts
+                                   sameAlias = find (\x -> predicateAlias x == Just a) fcts
+                                   in case (sameContent, sameAlias) of
+                                           (Nothing, Nothing) -> Right (emptyPredicate { predicateName = a } : p : fcts)
+                                           _ -> Left "Fact already declared without an alias or with another alias"
+
+addFacts :: [Predicate] -> [Predicate] -> [TypeDef] -> Either String [Predicate]
+addFacts [] new _ = Right new
+addFacts (f:fs) old ts = do
+  case addFact f old ts of
+       Left _ -> addFacts fs old ts
+       Right new -> addFacts fs new ts
 
 -- Rules
 
@@ -102,16 +111,18 @@ liftConflict :: [Rule] -> Maybe Rule
 liftConflict [] = Nothing
 liftConflict (r:_) = Just r
 
-forwardChaining :: [Predicate] -> [Rule] -> [Predicate]
-forwardChaining [] _ = []
-forwardChaining f [] = f
-forwardChaining f rl =
+forwardChaining :: [Predicate] -> [Rule] -> [TypeDef] -> [Predicate]
+forwardChaining [] _ _ = []
+forwardChaining f [] _ = f
+forwardChaining f rl ts =
   go f (conflictSet f rl) []
   where
     go :: [Predicate] -> [Rule] -> [Rule] -> [Predicate]
     go f' cs usedRules = case liftConflict cs of
                              Nothing -> f'
-                             Just r -> let nf = consequences r ++ f'
+                             Just r -> let nf = case addFacts (consequences r) f' ts of
+                                                     Right nf' -> nf'
+                                                     Left _ -> error "impossible"
                                            usedRules' = r:usedRules
                                            in go nf (conflictSet nf (rl \\ usedRules')) usedRules'
 

@@ -44,5 +44,6 @@ main =
                                                       -- ShowNonFacts -> print (filter (\x -> ))>> go fcts ts rls
                                                       ShowDeclaredTypes -> print ts >> loop
                                                       ShowRules -> print rls >> loop
+                                                      ForwardChaining -> printRed "Chaining..." >> go (forwardChaining fcts rls ts) ts rls
                                                       Quit -> return ()
       where loop = go fcts ts rls

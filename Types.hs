@@ -87,7 +87,21 @@ type Conjunction = [Predicate]
 
 data Rule = Rule { premises :: Conjunction,
                    consequences :: Conjunction
-                 } deriving (Show, Eq)
+                 } deriving (Eq)
+
+-- Show instance for Rule with proper formatting
+instance Show Rule where
+    show (Rule prem cons) =
+        "Rule {\n" ++
+        "  Premises: [" ++ showConjunction prem ++ "]\n" ++
+        "  Consequences: [" ++ showConjunction cons ++ "]\n" ++
+        "}"
+
+-- Helper function to format the Conjunction (list of Predicate)
+showConjunction :: Conjunction -> String
+showConjunction [] = ""
+showConjunction [p] = "  " ++ show p
+showConjunction (p:ps) = "  " ++ show p ++ ",\n" ++ showConjunction ps
 
 -- Expr
 
@@ -100,7 +114,11 @@ data Expr = ExprPredicate Predicate
 
 -- Commands
 
-data Command = ShowFacts | ShowNonFacts | ShowDeclaredTypes | ShowRules | Quit
+data Command = ShowFacts
+             | ShowDeclaredTypes
+             | ShowRules
+             | ForwardChaining
+             | Quit
              deriving (Eq, Show)
 
 -- Key

@@ -152,17 +152,17 @@ rule = do premises <- conjunction
 
 command :: Parser Command
 command =
-   do string "showNonFacts"
-      return ShowNonFacts
-  <|>
-   do string "showFacts"
+   do string "facts"
       return ShowFacts
-  <|>
-   do string "showDeclaredTypes"
+   <|>
+   do string "types"
       return ShowDeclaredTypes
    <|>
-   do string "showRules"
+   do string "rules"
       return ShowRules
+   <|>
+   do string "forward"
+      return ForwardChaining
    <|>
    do string "quit"
       return Quit
