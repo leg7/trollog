@@ -1,93 +1,109 @@
 module Engine where
 import Types
-import Data.List (delete, (\\))
+import Data.List (delete, (\\), find)
 
---Binary Search Tree
-data BST a = Empty | Node a (BST a) (BST a) deriving (Show)
+-- Types
 
-bstAddElement :: (Ord a) => BST a -> a -> BST a
-bstAddElement Empty a = Node a Empty Empty
-bstAddElement (Node b left right) a =
-    if (a > b) then (Node b left (bstAddElement right a))
-               else (Node b (bstAddElement left a) right)
+declaredTypes :: [TypeDef]
+declaredTypes = []
 
-bstHasElement :: (Ord a) => BST a -> a -> Bool
-bstHasElement Empty _ = False
-bstHasElement (Node b left right) a =
-    if (a==b) then True
-              else if (a > b) then bstHasElement right a
-                              else bstHasElement left a
+declared :: TypeDef -> [TypeDef] -> Bool
+declared t ts = case find (\x -> typeName t == typeName x) ts of
+                     Nothing -> False
+                     Just _ -> True
 
-bstHasKey :: (Key a) => BST a -> String -> Bool
-bstHasKey Empty _ = False
-bstHasKey (Node x l r) k
-  | k > kx = bstHasKey r k
-  | k < kx = bstHasKey l k
-  | otherwise = True
-  where kx = key x
+isPType :: Type -> Bool
+isPType (P _) = True
+isPType _ = False
 
-bstGetElement :: (Key a) => BST a -> String -> Maybe a
-bstGetElement Empty _ = Nothing
-bstGetElement (Node x l r) k
-  | k > kx = bstGetElement r k
-  | k < kx = bstGetElement l k
-  | otherwise = Just x
-  where kx = key x
+pTypeVal :: Type -> [String]
+pTypeVal (P n) = n
+pTypeVal _ = error "I'll deal with this later"
+
+typeDefsFromTypeArgs :: [Type] -> [TypeDef]
+typeDefsFromTypeArgs =
+  map (\x -> emptyTypeDef { typeName = x})
+  . concatMap pTypeVal
+  . filter isPType
+
+-- TODO: Add newTypes to facts
+addDeclaredTypes :: TypeDef -> [TypeDef] -> Either String [TypeDef]
+addDeclaredTypes t ts
+  | declared t ts = Left "A type with the same name has already been declared"
+  | otherwise = let stypes = typeDefsFromTypeArgs (typeArgs t)
+                    newTypes = filter (\x -> not $ declared x ts) stypes
+                    in Right $ t:(newTypes ++ ts)
+
+typeNameOfPredAlias :: Predicate -> [TypeDef] -> Maybe String
+typeNameOfPredAlias p ts = case predicateAlias p of
+                                Nothing -> Nothing
+                                Just a -> find (== a) $ map typeName ts
+
+-- TODO: Support aliases
+wellTyped :: Predicate -> [TypeDef] -> Bool
+wellTyped p tdfs =
+  case find (\x -> typeName x == predicateName p) tdfs of
+       Nothing -> False
+       Just t -> let pa = predicateArgs p
+                     ta = typeArgs t
+                     in (length pa == length ta) && and (zipWith cmp pa ta)
+                       where
+                         cmp (StringArg _) Str = True
+                         cmp (IntArg _) N = True
+                         cmp (PredicateArg p') (P pns) =
+                           case typeNameOfPredAlias p' tdfs of
+                                Nothing -> False
+                                Just tName -> ((predicateName p' `elem` pns) || (tName `elem` pns)) && wellTyped p' tdfs
+                         cmp _ _ = False
 
 
-bstToList :: (Ord a) => BST a -> [a]
-bstToList Empty = []
-bstToList (Node a left right) = a:(bstToList left)++(bstToList right)
+-- pp = [Predicate {predicateAlias = Just "a", predicateNegated = False, predicateName = "p", predicateArgs = [IntArg 2]},Predicate {predicateAlias = Nothing, predicateNegated = False, predicateName = "p", predicateArgs = [IntArg 1]}]
+-- tt = [TypeDef {typeName = "y", typeArgs = [P ["p","test"]]},TypeDef {typeName = "test", typeArgs = []},TypeDef {typeName = "p", typeArgs = [N]}]
+--
+-- p = Predicate {
+--   predicateAlias = Nothing,
+--   predicateName = "y",
+--   predicateNegated = False,
+--   predicateArgs = [PredicateArg (
+--     Predicate {
+--       predicateAlias = Nothing,
+--       predicateName = "p",
+--       predicateNegated = False,
+--       predicateArgs = [ IntArg 1 ]
+--     }
+--   )]
+-- }
+-- typeNameOfPred (head pp) tt
+-- wellTyped p tt
 
+-- Facts
 
---Dictionnary
-type Dict a b = [(a,b)]
+facts :: [Predicate]
+facts = []
 
-dictAddKV :: Dict a b -> a -> b -> Dict a b
-dictAddKV [] k value = [(k,value)]
-dictAddKV (_:t) k value = dictAddKV t k value
+contradiction :: Predicate -> [Predicate] -> Bool
+contradiction p fcts =
+  case find (\x -> predicateName x == predicateName p && predicateNegated x /= predicateNegated p) fcts of
+                            Nothing -> False
+                            _ -> True
 
-dictGetValue :: (Eq a) => Dict a b -> a -> Maybe b
-dictGetValue [] _ = Nothing
-dictGetValue (h:t) k =
-  if k == fst h then Just (snd h)
-                else dictGetValue t k
+addFact :: Predicate -> [Predicate] -> [TypeDef] -> Either String [Predicate]
+addFact p fcts ts
+  | contradiction p fcts = Left "Fact contradicts another in the knowledge base"
+  | not $ wellTyped p ts = Left "Fact doesn't have a matching type definition" -- Check if it has 0 args
+  | p `elem` fcts = Right fcts
+  | otherwise = case predicateAlias p of
+                     Nothing -> Right (p:fcts)
+                     Just a -> case find (\x -> x == p { predicateAlias = Nothing }) fcts of
+                                    Nothing -> Right (p:fcts)
+                                    _ -> Left "Fact already declared without an alias"
 
-dictGetKey :: (Eq b) => Dict a b -> b -> Maybe a
-dictGetKey [] _ = Nothing
-dictGetKey (h:t) value =
-  if value == snd h then Just (fst h)
-                    else dictGetKey t value
+-- Rules
 
-declaredTypes :: BST TypeDef
-declaredTypes = Empty
-
-facts :: BST Predicate
-facts = Empty
-
-nonFacts :: BST Predicate
-nonFacts = Empty
-
-rules :: Dict [Predicate] [Predicate]
+rules :: [Rule]
 rules = []
-addRule :: Dict [Predicate] [Predicate] -> Rule -> Dict [Predicate] [Predicate]
-addRule rs r = dictAddKV rs (premises r) (consequences r)
 
--- TODO: getElement and check if args are the same type
-wellTyped :: Predicate -> BST TypeDef -> Bool
-wellTyped p t = bstHasKey t (key p)
-
-contradiction :: Predicate -> BST Predicate -> Bool
-contradiction p nf = bstHasKey nf (key p)
-
-
---Chainage Avant
-{-chainageAvant :: Predicate -> Bool
-chainageAvant predi =
-    if (isPredicate predi) then true
-    else -}
-
---Test
+-- Chaining
 
 conflictSet :: [Predicate] -> [Rule] -> [Rule]
 conflictSet [] rl = rl
@@ -110,6 +126,8 @@ forwardChaining f rl =
                              Just r -> let nf = consequences r ++ f'
                                            usedRules' = r:usedRules
                                            in go nf (conflictSet nf (rl \\ usedRules')) usedRules'
+
+--Test
 
 pa :: Predicate
 pa = emptyPredicate { predicateName = "A" }
@@ -181,13 +199,3 @@ rll = [r1, r2, r3]
 -- liftConflict $ conflictSet (pd:pc:fs) (delete r2 (delete r1 rll))
 
 -- forwardChaining fs rll
-
-{- bstGetElement fs "A"
-bstGetElement fs "B"
-bstGetElement fs "C"
-bstGetElement fs "D" -}
-
-nfs :: BST Predicate
-nfs = bstAddElement nonFacts pc
-
--- contradiction pb nfs

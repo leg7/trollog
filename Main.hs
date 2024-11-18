@@ -22,24 +22,27 @@ getExpr = go []
 
 main :: IO ()
 main =
-  go facts nonFacts declaredTypes rules
+  go facts declaredTypes rules
   where
-    go :: BST Predicate -> BST Predicate -> BST TypeDef -> Dict Conjunction Conjunction -> IO ()
-    go f nf ty rl = do
+    go :: [Predicate] -> [TypeDef] -> [Rule] -> IO ()
+    go fcts ts rls = do
       putStr prompt
       hFlush stdout
       exprStr <- getExpr
       case app expr exprStr of
-           Left err -> printRed err
+           Left err -> printRed err >> loop
            Right (e, _) -> case e of
-                                ExprPredicate p -> if predicateNegated p
-                                                      then go f (bstAddElement nf p) ty rl
-                                                      else go (bstAddElement f p) nf ty rl
-                                ExprTypeDef t -> go f nf (bstAddElement ty t) rl
-                                ExprRule r -> go f nf ty (dictAddKV rl (premises r) (consequences r))
+                                ExprPredicate p -> case addFact p fcts ts of
+                                                        Left err -> printRed err >> loop
+                                                        Right newFcts -> go newFcts ts rls
+                                ExprTypeDef t -> case addDeclaredTypes t ts of
+                                                      Left err -> printRed err >> loop
+                                                      Right ts' -> go fcts ts' rls
+                                ExprRule r -> go fcts ts (r:rls)
                                 ExprCommand c -> case c of
-                                                      ShowFacts -> print f >> go f nf ty rl
-                                                      ShowNonFacts -> print nf >> go f nf ty rl
-                                                      ShowDeclaredTypes -> print ty >> go f nf ty rl
-                                                      ShowRules -> print rl >> go f nf ty rl
+                                                      ShowFacts -> print fcts >> loop
+                                                      -- ShowNonFacts -> print (filter (\x -> ))>> go fcts ts rls
+                                                      ShowDeclaredTypes -> print ts >> loop
+                                                      ShowRules -> print rls >> loop
                                                       Quit -> return ()
+      where loop = go fcts ts rls

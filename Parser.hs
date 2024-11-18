@@ -3,6 +3,7 @@
 module Parser where
 import Types
 import Data.Char
+import Data.List (nub)
 import Control.Applicative (Alternative, (<|>), empty, some, many)
 import Distribution.Utils.Generic (isAsciiAlphaNum)
 
@@ -138,7 +139,7 @@ typeDef = do char' '!'
     type' :: Parser Type
     type' = (string "String" >> return Str)
             <|> (string "Int" >> return N)
-            <|> (P <$> list identifier '|')
+            <|> (P . nub <$> list identifier '|')
 
 rule :: Parser Rule
 rule = do premises <- conjunction

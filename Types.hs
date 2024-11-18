@@ -31,9 +31,14 @@ data TypeDef = TypeDef { typeName :: String,
                          typeArgs :: [Type]
                        } deriving (Show, Eq)
 
+emptyTypeDef :: TypeDef
+emptyTypeDef = TypeDef {
+  typeName = "",
+  typeArgs = []
+}
+
 instance Ord TypeDef where
     compare td1 td2 = compare (typeName td1) (typeName td2)
-
 
 -- Rules
 
