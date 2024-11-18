@@ -70,9 +70,9 @@ isFact p fcts = case find (== p { predicateAlias = Nothing }) fcts of
 
 contradiction :: Predicate -> [Predicate] -> Bool
 contradiction p fcts =
-  case find (\x -> predicateName x == predicateName p && predicateNegated x /= predicateNegated p) fcts of
-                            Nothing -> False
-                            _ -> True
+  case find (\x -> predicateName x == predicateName p && predicateNegated x /= predicateNegated p && predicateArgs x == predicateArgs p) fcts of
+       Nothing -> False
+       _ -> True
 
 -- TODO: If fact is aliased add it's alias as a fact that takes 0 args with the same pred name
 addFact :: Predicate -> [Predicate] -> [TypeDef] -> Either String [Predicate]
