@@ -1,5 +1,6 @@
 module Engine where
 import Types
+import Data.List (delete, (\\))
 
 --Binary Search Tree
 data BST a = Empty | Node a (BST a) (BST a) deriving (Show)
@@ -88,6 +89,28 @@ chainageAvant predi =
 
 --Test
 
+conflictSet :: [Predicate] -> [Rule] -> [Rule]
+conflictSet [] rl = rl
+conflictSet _ [] = []
+conflictSet f rl = filter (all (`elem` f) . premises) rl
+
+liftConflict :: [Rule] -> Maybe Rule
+liftConflict [] = Nothing
+liftConflict (r:_) = Just r
+
+forwardChaining :: [Predicate] -> [Rule] -> [Predicate]
+forwardChaining [] _ = []
+forwardChaining f [] = f
+forwardChaining f rl =
+  go f (conflictSet f rl) []
+  where
+    go :: [Predicate] -> [Rule] -> [Rule] -> [Predicate]
+    go f' cs usedRules = case liftConflict cs of
+                             Nothing -> f'
+                             Just r -> let nf = consequences r ++ f'
+                                           usedRules' = r:usedRules
+                                           in go nf (conflictSet nf (rl \\ usedRules')) usedRules'
+
 pa :: Predicate
 pa = emptyPredicate { predicateName = "A" }
 
@@ -101,14 +124,63 @@ pc = emptyPredicate { predicateName = "C" }
 pd :: Predicate
 pd = emptyPredicate { predicateName = "D" }
 
-rule :: Rule
-rule = Rule {
-    premises = [pa, pb] ,
-    consequences = [pc, pd]
+pe :: Predicate
+pe = emptyPredicate { predicateName = "E" }
+
+
+r1 :: Rule
+r1 = Rule {
+    premises = [pa] ,
+    consequences = [pc]
 }
 
-fs :: BST Predicate
-fs = bstAddElement (bstAddElement (bstAddElement (bstAddElement facts pb) pc) pc) pd
+r2 :: Rule
+r2 = Rule {
+  premises = [pa, pb],
+  consequences = [pd]
+}
+
+r3 :: Rule
+r3 = Rule {
+  premises = [pa, pc, pd],
+  consequences = [pe]
+}
+
+-- r1 :: Rule
+-- r1 = Rule {
+--     premises = [pa] ,
+--     consequences = [pc]
+-- }
+--
+-- r2 :: Rule
+-- r2 = Rule {
+--   premises = [pc],
+--   consequences = [pd]
+-- }
+--
+-- r3 :: Rule
+-- r3 = Rule {
+--   premises = [pd],
+--   consequences = [pe]
+-- }
+
+
+fs :: [Predicate]
+fs = [pa, pb]
+
+rll :: [Rule]
+rll = [r1, r2, r3]
+
+-- conflictSet fs rll
+-- liftConflict $ conflictSet fs rll
+-- --
+-- conflictSet (pc:fs) (delete r1 rll)
+-- liftConflict $ conflictSet (pc:fs) (delete r1 rll)
+-- --
+-- conflictSet (pd:pc:fs) (delete r2 (delete r1 rll))
+-- liftConflict $ conflictSet (pd:pc:fs) (delete r2 (delete r1 rll))
+
+-- forwardChaining fs rll
 
 {- bstGetElement fs "A"
 bstGetElement fs "B"
