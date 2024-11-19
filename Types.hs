@@ -98,6 +98,8 @@ data Command = ShowFacts
              | ShowDeclaredTypes
              | ShowRules
              | ForwardChaining
+             | StrategyRecent
+             | StrategyFirst
              | Quit
              deriving (Eq, Show)
 

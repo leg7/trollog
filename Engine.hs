@@ -107,24 +107,28 @@ conflictSet [] rl = rl
 conflictSet _ [] = []
 conflictSet f rl = filter (all (`elem` f) . premises) rl
 
-liftConflict :: [Rule] -> Maybe Rule
-liftConflict [] = Nothing
-liftConflict (r:_) = Just r
+type Strategy = [Rule] -> Maybe Rule
+liftConflictFirst :: Strategy
+liftConflictFirst [] = Nothing
+liftConflictFirst (r:_) = Just r
 
-forwardChaining :: [Predicate] -> [Rule] -> [TypeDef] -> ([Predicate], [Rule])
-forwardChaining [] _ _ = ([],[])
-forwardChaining f [] _ = (f,[])
-forwardChaining f rl ts =
-  go f (conflictSet f rl) []
+liftConflictRecent :: Strategy
+liftConflictRecent = liftConflictFirst
+
+forwardChaining :: [Predicate] -> [Rule] -> [TypeDef] -> Strategy -> ([Predicate], [Rule])
+forwardChaining [] _ _ _ = ([],[])
+forwardChaining f [] _ _ = (f,[])
+forwardChaining f rl ts strat =
+  go f (conflictSet f rl) [] strat
   where
-    go :: [Predicate] -> [Rule] -> [Rule] -> ([Predicate], [Rule])
-    go f' cs usedRules = case liftConflict cs of
-                             Nothing -> (f', usedRules)
-                             Just r -> let nf = case addFacts (consequences r) f' ts of
-                                                     Right nf' -> nf'
-                                                     Left _ -> error "impossible"
-                                           usedRules' = r:usedRules
-                                           in go nf (conflictSet nf (rl \\ usedRules')) usedRules'
+    go :: [Predicate] -> [Rule] -> [Rule] -> Strategy -> ([Predicate], [Rule])
+    go f' cs usedRules strat = case strat cs of
+                                    Nothing -> (f', usedRules)
+                                    Just r -> let nf = case addFacts (consequences r) f' ts of
+                                                            Right nf' -> nf'
+                                                            Left _ -> error "impossible"
+                                                  usedRules' = r:usedRules
+                                                  in go nf (conflictSet nf (rl \\ usedRules')) usedRules' strat
 
 --Test
 

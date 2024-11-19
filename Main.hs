@@ -23,10 +23,10 @@ getExpr = go []
 
 main :: IO ()
 main =
-  go facts declaredTypes rules
+  go facts declaredTypes rules liftConflictFirst
   where
-    go :: [Predicate] -> [TypeDef] -> [Rule] -> IO ()
-    go fcts ts rls = do
+    go :: [Predicate] -> [TypeDef] -> [Rule] -> Strategy -> IO ()
+    go fcts ts rls strat = do
       putStr prompt
       hFlush stdout
       exprStr <- getExpr
@@ -35,22 +35,26 @@ main =
            Right (e, _) -> case e of
                                 ExprPredicate p -> case addFact p fcts ts of
                                                         Left err -> printRed err >> loop
-                                                        Right newFcts -> go newFcts ts rls
+                                                        Right newFcts -> go newFcts ts rls strat
                                 ExprTypeDef t -> case addDeclaredTypes t ts of
                                                       Left err -> printRed err >> loop
-                                                      Right ts' -> go fcts ts' rls
-                                ExprRule r -> go fcts ts (r:rls)
+                                                      Right ts' -> go fcts ts' rls strat
+                                ExprRule r -> go fcts ts (r:rls) strat
                                 ExprCommand c -> case c of
                                                       ShowFacts -> print fcts >> loop
                                                       -- ShowNonFacts -> print (filter (\x -> ))>> go fcts ts rls
                                                       ShowDeclaredTypes -> print ts >> loop
                                                       ShowRules -> print rls >> loop
                                                       ForwardChaining -> do printRed "Chaining..."
-                                                                            let (newFcts, usedRules) = forwardChaining fcts rls ts
+                                                                            let (newFcts, usedRules) = forwardChaining fcts rls ts strat
                                                                             printRed "Newly deduced facts: "
                                                                             print (newFcts \\ fcts)
                                                                             printRed "Rules used to deduce facts: "
                                                                             print usedRules
-                                                                            go newFcts ts rls
+                                                                            go newFcts ts rls strat
+                                                      StrategyFirst -> do printRed "Using first rule resolution strategy"
+                                                                          go fcts ts rls liftConflictFirst
+                                                      StrategyRecent -> do printRed "Using most recently deduced premise strategy"
+                                                                           go fcts ts rls liftConflictRecent
                                                       Quit -> return ()
-      where loop = go fcts ts rls
+      where loop = go fcts ts rls strat

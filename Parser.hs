@@ -164,6 +164,12 @@ command =
    do string "forward"
       return ForwardChaining
    <|>
+   do string "strategyFirst"
+      return StrategyFirst
+   <|>
+   do string "strategyRecent"
+      return StrategyRecent
+   <|>
    do string "quit"
       return Quit
 
