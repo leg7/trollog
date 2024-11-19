@@ -63,10 +63,10 @@ wellTyped p tdfs fcts =
 facts :: [Predicate]
 facts = []
 
-{-isFact :: Predicate -> [Predicate] -> Bool
-isFact p fcts = case find (== p { predicateAlias = Nothing }) fcts of
-                     Nothing -> False
-                     Just _ -> True-}
+nameTaken :: Predicate -> [Predicate] -> Bool
+nameTaken p fcts = case find (\x -> predicateName x == predicateName p || predicateAlias x /= Nothing && predicateAlias x == predicateAlias p) fcts of
+                            Nothing -> False
+                            Just _ -> True
 
 contradiction :: Predicate -> [Predicate] -> Bool
 contradiction p fcts =
@@ -78,12 +78,14 @@ contradiction p fcts =
 addFact :: Predicate -> [Predicate] -> [TypeDef] -> Either String [Predicate]
 addFact p fcts ts
   | contradiction p fcts = Left "Fact contradicts another in the knowledge base"
-  | not $ wellTyped p ts fcts = Left "Fact doesn't have a matching type definition" -- Check if it has 0 args
+  | not $ wellTyped p ts fcts = if null (predicateArgs p) && not (nameTaken p fcts) && p `notElem` fcts
+                                   then Right (p:fcts)
+                                   else Left "Fact doesn't have a matching type definition or name already taken"
   | p `elem` fcts = Right fcts
   | otherwise = case predicateAlias p of
                      Nothing -> Right (p:fcts)
                      Just a -> let sameContent = find (\x -> x == p { predicateAlias = Nothing }) $ map (\x -> x { predicateAlias = Nothing }) fcts
-                                   sameAlias = find (\x -> predicateAlias x == Just a) fcts
+                                   sameAlias = find (\x -> predicateAlias x == Just a || predicateName x == a) fcts
                                    in case (sameContent, sameAlias) of
                                            (Nothing, Nothing) -> Right (emptyPredicate { predicateName = a } : p : fcts)
                                            _ -> Left "Fact already declared without an alias or with another alias"
