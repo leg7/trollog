@@ -133,8 +133,6 @@ forwardChaining f rl ts strat =
                                                   in go nf (conflictSet nf (rl \\ usedRules')) usedRules' strat
 
 
-
-
 isFact :: Predicate -> [Predicate] -> Bool
 isFact _ [] = False
 isFact predi (h:t) = (predi==h) || (isFact predi t)
@@ -177,35 +175,33 @@ applyBCtoPremises :: (Conjunction -> [Predicate] -> [Rule] -> Bool) -> [Conjunct
 applyBCtoPremises bC [] f rs = False
 applyBCtoPremises bC (h:t) f rs = (bC h f rs) || (applyBCtoPremises bC t f rs)
 
-
-
 backwardChaining :: Conjunction -> [Predicate] -> [Rule] -> Bool
 backwardChaining quest f rs =
   if (areFacts quest f)
-     then True
-     else
-     {-if (hasContradiction conj f)
+     then
+     if (hasContradiction quest f)
         then False
         else True
-        else-}
+      else
         let stack =  getPremises (applicableRules (matchingRules quest rs) rs f)
      in
          applyBCtoPremises backwardChaining stack f rs
 
 
 
-{-backwardChainingWithTrace :: Conjunction -> [Predicate] -> [Rule] -> [] -> (Bool
-backwardChainingWithTrace quest f rs =
+
+{-backwardChainingWithTrace :: Conjunction -> [Predicate] -> [Rule] -> [Rule] -> (Bool,[Rule])
+backwardChainingWithTrace quest f rs trace =
   if (areFacts quest f)
-     then True
+     then (True,trace)
      else
-     {-if (hasContradiction conj f)
-        then False
-        else True
-        else-}
         let stack =  getPremises (applicableRules (matchingRules quest rs) rs f)
+        in if stack!=[]
+              then let firedRule = first (applicableRules (matchingRules quest rs))
      in
-     applyBCtoPremises backwardChainingWithTrace stack f rs-}
+     applyBCtoPremises backwardChaining stack f rs-}
+
+
 
 
 
@@ -213,6 +209,7 @@ backwardChainingWithTrace quest f rs =
 --Test
 
 --Daniel
+fnon1 = emptyPredicate { predicateName = "A" ,predicateNegated = True}
 f1 = emptyPredicate { predicateName = "A" }
 f2 = emptyPredicate { predicateName = "B" }
 f3 = emptyPredicate { predicateName = "C" }
@@ -227,7 +224,7 @@ rul1 = Rule {
 
 rul2 :: Rule
 rul2 = Rule {
-  premises = [f2],
+  premises = [f1],
   consequences = [f3]
 }
 
@@ -238,7 +235,7 @@ rul3 = Rule {
 }
 
 rls = [rul1,rul2,rul3]
-fts = [f1]
+fts = [f1,fnon1]
 question = [f4]
 
 
