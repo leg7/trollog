@@ -176,16 +176,11 @@ applyBCtoPremises bC [] f rs = False
 applyBCtoPremises bC (h:t) f rs = (bC h f rs) || (applyBCtoPremises bC t f rs)
 
 backwardChaining :: Conjunction -> [Predicate] -> [Rule] -> Bool
-backwardChaining quest f rs =
-  if (areFacts quest f)
-     then
-     if (hasContradiction quest f)
-        then False
-        else True
-      else
-        let stack =  getPremises (applicableRules (matchingRules quest rs) rs f)
-     in
-         applyBCtoPremises backwardChaining stack f rs
+backwardChaining quest f rs
+  | (hasContradiction quest f) = False
+  | (areFacts quest f) = True
+  | otherwise = let stack =  getPremises (applicableRules (matchingRules quest rs) rs f)
+                in applyBCtoPremises backwardChaining stack f rs
 
 
 
@@ -219,7 +214,7 @@ f5 = emptyPredicate { predicateName = "E" }
 rul1 :: Rule
 rul1 = Rule {
     premises = [f1] ,
-    consequences = [f2]
+    consequences = [fnon1]
 }
 
 rul2 :: Rule
@@ -234,9 +229,9 @@ rul3 = Rule {
   consequences = [f4]
 }
 
-rls = [rul1,rul2,rul3]
-fts = [f1,fnon1]
-question = [f4]
+rls = [rul1]
+fts = [f1]
+question = [fnon1]
 
 
 --Leonard
