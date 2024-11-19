@@ -89,6 +89,7 @@ data Expr = ExprPredicate Predicate
           | ExprTypeDef TypeDef
           | ExprRule Rule
           | ExprCommand Command
+          | ExprQuestion Conjunction
           deriving (Show, Eq)
 
 

@@ -150,6 +150,12 @@ rule = do premises <- conjunction
           return Rule { premises, consequences }
   where conjunction = list predicate ','
 
+question :: Parser Conjunction
+question = do char' '?'
+              q <- list predicate ','
+              spaces
+              return q
+
 command :: Parser Command
 command =
    do string "facts"
@@ -187,6 +193,10 @@ expr =
   do t <- typeDef
      char' '.'
      return $ ExprTypeDef t
+ <|>
+  do q <- question
+     char' '.'
+     return $ ExprQuestion q
  <|>
   do p <- alias <|> predicate
      char' '.'

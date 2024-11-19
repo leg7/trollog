@@ -57,4 +57,6 @@ main =
                                                       StrategyRecent -> do printRed "Using most recently deduced premise strategy"
                                                                            go fcts ts rls liftConflictRecent
                                                       Quit -> return ()
+                                ExprQuestion q -> do printRed $ show $ backwardChaining q fcts rls
+                                                     loop
       where loop = go fcts ts rls strat
