@@ -63,10 +63,10 @@ wellTyped p tdfs fcts =
 facts :: [Predicate]
 facts = []
 
-isFact :: Predicate -> [Predicate] -> Bool
+{-isFact :: Predicate -> [Predicate] -> Bool
 isFact p fcts = case find (== p { predicateAlias = Nothing }) fcts of
                      Nothing -> False
-                     Just _ -> True
+                     Just _ -> True-}
 
 contradiction :: Predicate -> [Predicate] -> Bool
 contradiction p fcts =
@@ -130,8 +130,117 @@ forwardChaining f rl ts strat =
                                                   usedRules' = r:usedRules
                                                   in go nf (conflictSet nf (rl \\ usedRules')) usedRules' strat
 
+
+
+
+isFact :: Predicate -> [Predicate] -> Bool
+isFact _ [] = False
+isFact predi (h:t) = (predi==h) || (isFact predi t)
+
+areFacts :: Conjunction -> [Predicate] -> Bool
+areFacts [] _ = error "Conjunction can't be empty"
+areFacts [predi] f = isFact predi f
+areFacts (h:t) f = (isFact h f) && (areFacts t f)
+
+matchingRules :: Conjunction -> [Rule] -> [Rule]
+matchingRules [] _ = error "Conjunction can't be empty"
+matchingRules _ [] = []
+matchingRules conseq (h:t)=
+  if (conseq == (consequences h))
+     then h:(matchingRules conseq t)
+     else matchingRules conseq t
+
+premiseIsConsequence :: Conjunction -> [Rule] -> Bool
+premiseIsConsequence [] _ = error "Can't have an empty premise"
+premiseIsConsequence premis [] = False
+premiseIsConsequence premis (h:t) = (premis == (consequences h)) || (premiseIsConsequence premis t)
+
+applicableRules :: [Rule] -> [Rule] -> [Predicate] -> [Rule]
+applicableRules [] _  _ = []
+applicableRules (h:t) rs f =
+  if (premiseIsConsequence (premises h) rs) || (areFacts (premises h) f)
+     then h:(applicableRules t rs f)
+     else applicableRules t rs f
+
+getPremises :: [Rule] -> [Conjunction]
+getPremises [] = []
+getPremises (h:t) = (premises h):(getPremises t)
+
+hasContradiction :: Conjunction -> [Predicate] -> Bool
+hasContradiction [] f = error "Conjunction can't be empty"
+hasContradiction [predi] f = contradiction predi f
+hasContradiction (h:t) f = (contradiction h f) || (hasContradiction t f)
+
+applyBCtoPremises :: (Conjunction -> [Predicate] -> [Rule] -> Bool) -> [Conjunction] -> [Predicate] -> [Rule] -> Bool
+applyBCtoPremises bC [] f rs = False
+applyBCtoPremises bC (h:t) f rs = (bC h f rs) || (applyBCtoPremises bC t f rs)
+
+
+
+backwardChaining :: Conjunction -> [Predicate] -> [Rule] -> Bool
+backwardChaining quest f rs =
+  if (areFacts quest f)
+     then True
+     else
+     {-if (hasContradiction conj f)
+        then False
+        else True
+        else-}
+        let stack =  getPremises (applicableRules (matchingRules quest rs) rs f)
+     in
+         applyBCtoPremises backwardChaining stack f rs
+
+
+
+{-backwardChainingWithTrace :: Conjunction -> [Predicate] -> [Rule] -> [] -> (Bool
+backwardChainingWithTrace quest f rs =
+  if (areFacts quest f)
+     then True
+     else
+     {-if (hasContradiction conj f)
+        then False
+        else True
+        else-}
+        let stack =  getPremises (applicableRules (matchingRules quest rs) rs f)
+     in
+     applyBCtoPremises backwardChainingWithTrace stack f rs-}
+
+
+
+
 --Test
 
+--Daniel
+f1 = emptyPredicate { predicateName = "A" }
+f2 = emptyPredicate { predicateName = "B" }
+f3 = emptyPredicate { predicateName = "C" }
+f4 = emptyPredicate { predicateName = "D" }
+f5 = emptyPredicate { predicateName = "E" }
+
+rul1 :: Rule
+rul1 = Rule {
+    premises = [f1] ,
+    consequences = [f2]
+}
+
+rul2 :: Rule
+rul2 = Rule {
+  premises = [f2],
+  consequences = [f3]
+}
+
+rul3 :: Rule
+rul3 = Rule {
+  premises = [f3],
+  consequences = [f4]
+}
+
+rls = [rul1,rul2,rul3]
+fts = [f1]
+question = [f4]
+
+
+--Leonard
 pa :: Predicate
 pa = emptyPredicate { predicateName = "A" }
 
