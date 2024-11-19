@@ -111,15 +111,15 @@ liftConflict :: [Rule] -> Maybe Rule
 liftConflict [] = Nothing
 liftConflict (r:_) = Just r
 
-forwardChaining :: [Predicate] -> [Rule] -> [TypeDef] -> [Predicate]
-forwardChaining [] _ _ = []
-forwardChaining f [] _ = f
+forwardChaining :: [Predicate] -> [Rule] -> [TypeDef] -> ([Predicate], [Rule])
+forwardChaining [] _ _ = ([],[])
+forwardChaining f [] _ = (f,[])
 forwardChaining f rl ts =
   go f (conflictSet f rl) []
   where
-    go :: [Predicate] -> [Rule] -> [Rule] -> [Predicate]
+    go :: [Predicate] -> [Rule] -> [Rule] -> ([Predicate], [Rule])
     go f' cs usedRules = case liftConflict cs of
-                             Nothing -> f'
+                             Nothing -> (f', usedRules)
                              Just r -> let nf = case addFacts (consequences r) f' ts of
                                                      Right nf' -> nf'
                                                      Left _ -> error "impossible"

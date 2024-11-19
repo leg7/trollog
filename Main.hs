@@ -2,6 +2,7 @@ module Main where
 import Parser
 import Engine
 import Types
+import Data.List ((\\))
 import System.IO (stdout, hFlush)
 
 -- TODO: Read until you encounter a . (Multiline editing)
@@ -44,6 +45,12 @@ main =
                                                       -- ShowNonFacts -> print (filter (\x -> ))>> go fcts ts rls
                                                       ShowDeclaredTypes -> print ts >> loop
                                                       ShowRules -> print rls >> loop
-                                                      ForwardChaining -> printRed "Chaining..." >> go (forwardChaining fcts rls ts) ts rls
+                                                      ForwardChaining -> do printRed "Chaining..."
+                                                                            let (newFcts, usedRules) = forwardChaining fcts rls ts
+                                                                            printRed "Newly deduced facts: "
+                                                                            print (newFcts \\ fcts)
+                                                                            printRed "Rules used to deduce facts: "
+                                                                            print usedRules
+                                                                            go newFcts ts rls
                                                       Quit -> return ()
       where loop = go fcts ts rls
